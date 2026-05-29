@@ -30,8 +30,8 @@ export async function getDistance(address) {
       return { success: true, distance, lat, lon };
     }
     return { success: false, error: "Alamat tidak ditemukan" };
-  } catch (error) {
-    return { success: false, error: "Terjadi kesalahan saat mencari alamat" };
+  } catch {
+    return { success: false, error: "Gagal mengambil data jarak" };
   }
 }
 

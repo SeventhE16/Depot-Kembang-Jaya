@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getProducts, addProduct, deleteProduct } from '../utils/productManager';
 import { Trash2, Plus, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AdminView() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(getProducts);
   const [newProduct, setNewProduct] = useState({ name: '', price: '', halfCubicUnits: '', image: '' });
   const [isAdding, setIsAdding] = useState(false);
 
-  useEffect(() => {
-    setProducts(getProducts());
-  }, []);
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];

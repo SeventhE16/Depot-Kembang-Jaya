@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import UserView from './components/UserView';
 import AdminView from './components/AdminView';
 import { Settings, LogOut, Package } from 'lucide-react';
+import logoDepotKayu from './assets/Depotkayu.jpg';
 
 function App() {
   const [authStatus, setAuthStatus] = useState('pending'); // 'pending' | 'visitor' | 'admin'
@@ -91,9 +92,7 @@ function App() {
             
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('user')}>
               {/* Logo Placeholder */}
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 border border-gray-300 overflow-hidden">
-                <span className="text-xs font-bold">LOGO</span>
-              </div>
+              <img src={logoDepotKayu} alt="Logo Depot Kayu" className="w-12 h-12 rounded-full border border-gray-300 object-cover" />
               <span className="text-2xl font-black text-[#c61872]">Depot Kayu</span>
             </div>
             

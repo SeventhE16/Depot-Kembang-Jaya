@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getProducts } from '../utils/productManager';
 import CartModal from './CartModal';
 import { ShoppingCart, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function UserView({ cart, setCart }) {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(getProducts);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  useEffect(() => {
-    setProducts(getProducts());
-  }, []);
+
 
   const addToCart = (product, quantity, type) => {
     const existing = cart.find(item => item.product.id === product.id && item.type === type);
