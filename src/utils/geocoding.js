@@ -1,6 +1,6 @@
-// Mock store coordinates (e.g. Jakarta Pusat)
-const STORE_LAT = -6.175392;
-const STORE_LON = 106.827153;
+// Mock store coordinates (Desa Tangkil Tengah, Kedungwuni, Pekalongan)
+const STORE_LAT = -6.915509; // Approximation for Kedungwuni, Pekalongan
+const STORE_LON = 109.638541;
 
 // Haversine formula to calculate straight-line distance in km
 function calculateDistance(lat1, lon1, lat2, lon2) {
