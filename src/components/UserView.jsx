@@ -35,7 +35,7 @@ export default function UserView({ cart, setCart }) {
       >
         <div className="absolute inset-0">
           <img 
-            src="https://images.unsplash.com/photo-1572983574751-248cd90a3c42?q=80&w=1200&auto=format&fit=crop" 
+            src="/assets/gambardepan.jpg" 
             alt="Hero Background" 
             className="w-full h-full object-cover opacity-30 mix-blend-overlay"
           />
