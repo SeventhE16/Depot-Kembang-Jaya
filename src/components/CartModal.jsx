@@ -12,7 +12,6 @@ export default function CartModal({ cart, setCart, onClose }) {
   const updateQuantity = (index, delta) => {
     const newCart = [...cart];
     newCart[index].quantity = Math.max(1, newCart[index].quantity + delta);
-    if (newCart[index].type === 'Satuan' && newCart[index].quantity > 53) newCart[index].quantity = 53;
     setCart(newCart);
   };
 
@@ -47,12 +46,19 @@ export default function CartModal({ cart, setCart, onClose }) {
     fetchDistance();
   }, [debouncedAddress]);
 
-  // Calculation
-  const totalItemPrice = cart.reduce((acc, item) => {
-    let multiplier = item.quantity;
-    if (item.type === 'Setengah Kubik') multiplier = 0.5;
-    return acc + (item.product.price * multiplier);
-  }, 0);
+  // Calculation helper
+  const getItemPrice = (item) => {
+    let basePrice = item.product.price;
+    let multiplier = 1;
+    if (item.type === 'Setengah Kubik') {
+      multiplier = item.product.halfCubicUnits || 1;
+    } else if (item.type === 'Kubik') {
+      multiplier = (item.product.halfCubicUnits || 1) * 2;
+    }
+    return basePrice * multiplier * item.quantity;
+  };
+
+  const totalItemPrice = cart.reduce((acc, item) => acc + getItemPrice(item), 0);
 
   const shippingCost = distanceInfo.distance !== null 
     ? calculateShippingCost(totalItemPrice, distanceInfo.distance)
@@ -76,8 +82,7 @@ export default function CartModal({ cart, setCart, onClose }) {
     orderText += `\nPesanan:\n`;
     
     cart.forEach(item => {
-      let qtyText = item.type === 'Setengah Kubik' ? 'Setengah Kubik' : `${item.quantity} ${item.type === 'Kubik' ? 'Kubik' : 'Pcs'}`;
-      orderText += `- ${item.product.name} (${qtyText})\n`;
+      orderText += `- ${item.product.name} (${item.quantity} ${item.type}) - Rp ${getItemPrice(item).toLocaleString('id-ID')}\n`;
     });
 
     orderText += `\nTotal Harga Barang: Rp ${totalItemPrice.toLocaleString('id-ID')}\n`;
@@ -98,43 +103,41 @@ export default function CartModal({ cart, setCart, onClose }) {
           className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row"
         >
           {/* Cart Items Section */}
-          <div className="flex-1 overflow-y-auto p-6 bg-slate-50 border-r border-slate-100">
+          <div className="flex-1 overflow-y-auto p-6 bg-gray-50 border-r border-gray-100">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-slate-800">Keranjang Belanja</h2>
-              <button onClick={onClose} className="md:hidden p-2 text-slate-500 bg-slate-200 rounded-full">
+              <h2 className="text-2xl font-bold text-gray-800">Keranjang Belanja</h2>
+              <button onClick={onClose} className="md:hidden p-2 text-gray-500 bg-gray-200 rounded-full">
                 <X size={20} />
               </button>
             </div>
 
             {cart.length === 0 ? (
-              <div className="text-center text-slate-500 py-12">
+              <div className="text-center text-gray-500 py-12">
                 Keranjang Anda kosong
               </div>
             ) : (
               <div className="space-y-4">
                 {cart.map((item, index) => (
-                  <div key={index} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex gap-4">
+                  <div key={index} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 relative">
                     <img src={item.product.image} alt={item.product.name} className="w-20 h-20 object-cover rounded-lg" />
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
-                        <h4 className="font-bold text-slate-800">{item.product.name}</h4>
-                        <p className="text-sm text-slate-500">Format: {item.type}</p>
+                        <h4 className="font-bold text-gray-800">{item.product.name}</h4>
+                        <p className="text-sm text-gray-500">Opsi: {item.type}</p>
                       </div>
                       <div className="flex justify-between items-center mt-2">
-                        <span className="font-semibold text-amber-600">
-                           Rp {(item.product.price * (item.type === 'Setengah Kubik' ? 0.5 : item.quantity)).toLocaleString('id-ID')}
+                        <span className="font-bold text-[#c61872]">
+                           Rp {getItemPrice(item).toLocaleString('id-ID')}
                         </span>
                         
-                        {item.type !== 'Setengah Kubik' && (
-                          <div className="flex items-center gap-3 bg-slate-50 rounded-lg p-1 border border-slate-200">
-                            <button onClick={() => updateQuantity(index, -1)} className="p-1 hover:bg-white rounded"><Minus size={14}/></button>
-                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(index, 1)} className="p-1 hover:bg-white rounded"><Plus size={14}/></button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200">
+                          <button onClick={() => updateQuantity(index, -1)} className="p-1 hover:bg-white rounded text-gray-600"><Minus size={14}/></button>
+                          <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(index, 1)} className="p-1 hover:bg-white rounded text-gray-600"><Plus size={14}/></button>
+                        </div>
                       </div>
                     </div>
-                    <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-600 self-start p-1">
+                    <button onClick={() => removeItem(index)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition">
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -145,77 +148,77 @@ export default function CartModal({ cart, setCart, onClose }) {
 
           {/* Checkout Form Section */}
           <div className="flex-1 p-6 flex flex-col h-full bg-white relative">
-            <button onClick={onClose} className="hidden md:block absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 rounded-full transition">
+            <button onClick={onClose} className="hidden md:block absolute top-4 right-4 p-2 text-gray-400 hover:bg-gray-100 rounded-full transition">
               <X size={20} />
             </button>
             
-            <h3 className="text-xl font-bold text-slate-800 mb-6">Informasi Pengiriman</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-6">Informasi Pengiriman</h3>
             
             <div className="space-y-4 flex-1 overflow-y-auto pr-2">
               <div>
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-1"><User size={16}/> Nama Penerima</label>
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-1"><User size={16}/> Nama Penerima</label>
                 <input 
                   type="text" 
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500 outline-none"
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#c61872] focus:border-[#c61872] outline-none"
                   placeholder="Masukkan nama lengkap"
                 />
               </div>
               <div>
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-1"><Phone size={16}/> Nomor Telepon / WA</label>
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-1"><Phone size={16}/> Nomor Telepon / WA</label>
                 <input 
                   type="tel" 
                   value={formData.phone}
                   onChange={e => setFormData({...formData, phone: e.target.value})}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500 outline-none"
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#c61872] focus:border-[#c61872] outline-none"
                   placeholder="0812xxxxxx"
                 />
               </div>
               <div>
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-1"><MapPin size={16}/> Alamat Lengkap</label>
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-1"><MapPin size={16}/> Alamat Lengkap</label>
                 <textarea 
                   rows="3"
                   value={formData.address}
                   onChange={e => setFormData({...formData, address: e.target.value})}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#c61872] focus:border-[#c61872] outline-none resize-none"
                   placeholder="Ketik alamat pengiriman lengkap... (Otomatis hitung jarak)"
                 ></textarea>
                 
                 {/* Geocoding Status */}
                 <div className="mt-2 text-sm">
                   {distanceInfo.loading && <span className="flex items-center gap-2 text-blue-600"><Loader2 size={14} className="animate-spin" /> Menghitung jarak...</span>}
-                  {distanceInfo.error && <span className="text-amber-600">{distanceInfo.error}. Ongkir akan dihitung manual nanti.</span>}
+                  {distanceInfo.error && <span className="text-amber-600 font-medium">{distanceInfo.error}. Ongkir akan dihitung manual nanti.</span>}
                   {distanceInfo.distance !== null && !distanceInfo.loading && (
-                    <span className="text-emerald-600 font-medium">Jarak ke lokasi: {distanceInfo.distance.toFixed(1)} km</span>
+                    <span className="text-emerald-600 font-bold">Jarak ke lokasi: {distanceInfo.distance.toFixed(1)} km</span>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Order Summary */}
-            <div className="mt-6 border-t border-slate-100 pt-6 space-y-3 bg-white">
-              <div className="flex justify-between text-slate-600">
+            <div className="mt-6 border-t border-gray-100 pt-6 space-y-3 bg-white">
+              <div className="flex justify-between text-gray-600 font-medium">
                 <span>Total Harga Barang</span>
-                <span className="font-semibold text-slate-800">Rp {totalItemPrice.toLocaleString('id-ID')}</span>
+                <span className="text-gray-900">Rp {totalItemPrice.toLocaleString('id-ID')}</span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-gray-600 font-medium">
                 <span>Ongkos Kirim</span>
-                <span className="font-semibold text-slate-800">
+                <span className="text-gray-900">
                   {distanceInfo.distance === null ? 'Menunggu Alamat...' : `Rp ${shippingCost.toLocaleString('id-ID')}`}
                 </span>
               </div>
-              <div className="flex justify-between text-lg font-bold text-slate-900 pt-2 border-t border-slate-100">
+              <div className="flex justify-between text-lg font-black text-gray-900 pt-3 border-t border-gray-100">
                 <span>Total Pembayaran</span>
-                <span className="text-amber-600">Rp {grandTotal.toLocaleString('id-ID')}</span>
+                <span className="text-[#c61872]">Rp {grandTotal.toLocaleString('id-ID')}</span>
               </div>
 
               <button 
                 onClick={handleCheckout}
                 disabled={cart.length === 0}
-                className="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white py-3.5 rounded-xl font-bold text-lg transition shadow-lg shadow-emerald-500/30"
+                className="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 disabled:shadow-none text-white py-3.5 rounded-xl font-bold text-lg transition shadow-lg shadow-emerald-500/30"
               >
-                Checkout WhatsApp
+                Checkout via WhatsApp
               </button>
             </div>
           </div>
