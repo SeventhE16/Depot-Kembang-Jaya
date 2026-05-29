@@ -45,3 +45,14 @@ export const deleteProduct = (id) => {
   const filtered = products.filter(p => p.id !== id);
   localStorage.setItem("depot_products_v3", JSON.stringify(filtered));
 };
+
+export const updateProduct = (id, updatedData) => {
+  const products = getProducts();
+  const index = products.findIndex(p => p.id === id);
+  if (index !== -1) {
+    products[index] = { ...products[index], ...updatedData };
+    localStorage.setItem("depot_products_v3", JSON.stringify(products));
+    return products[index];
+  }
+  return null;
+};

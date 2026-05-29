@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { getProducts, addProduct, deleteProduct } from '../utils/productManager';
-import { Trash2, Plus, Image as ImageIcon } from 'lucide-react';
+import { getProducts, addProduct, deleteProduct, updateProduct } from '../utils/productManager';
+import { Trash2, Plus, Image as ImageIcon, Edit2, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AdminView() {
   const [products, setProducts] = useState(getProducts);
   const [newProduct, setNewProduct] = useState({ name: '', price: '', halfCubicUnits: '', image: '' });
   const [isAdding, setIsAdding] = useState(false);
-
-
+  const [editingId, setEditingId] = useState(null);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -21,28 +20,69 @@ export default function AdminView() {
     }
   };
 
-  const handleAdd = (e) => {
+  const handleAddOrUpdate = (e) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price || !newProduct.halfCubicUnits || !newProduct.image) {
       alert("Mohon isi semua field termasuk gambar");
       return;
     }
-    const added = addProduct({
-      name: newProduct.name,
-      price: parseInt(newProduct.price),
-      halfCubicUnits: parseInt(newProduct.halfCubicUnits),
-      image: newProduct.image
-    });
-    setProducts([...products, added]);
+    
+    if (editingId !== null) {
+      // Mode Edit
+      const updated = updateProduct(editingId, {
+        name: newProduct.name,
+        price: parseInt(newProduct.price),
+        halfCubicUnits: parseInt(newProduct.halfCubicUnits),
+        image: newProduct.image
+      });
+      if (updated) {
+        setProducts(products.map(p => p.id === editingId ? updated : p));
+      }
+    } else {
+      // Mode Tambah
+      const added = addProduct({
+        name: newProduct.name,
+        price: parseInt(newProduct.price),
+        halfCubicUnits: parseInt(newProduct.halfCubicUnits),
+        image: newProduct.image
+      });
+      setProducts([...products, added]);
+    }
+    
+    // Reset Form
     setNewProduct({ name: '', price: '', halfCubicUnits: '', image: '' });
     setIsAdding(false);
+    setEditingId(null);
   };
 
   const handleDelete = (id) => {
     if(confirm("Yakin ingin menghapus produk ini?")) {
       deleteProduct(id);
       setProducts(products.filter(p => p.id !== id));
+      if (editingId === id) {
+        setIsAdding(false);
+        setEditingId(null);
+        setNewProduct({ name: '', price: '', halfCubicUnits: '', image: '' });
+      }
     }
+  };
+
+  const startEdit = (product) => {
+    setNewProduct({
+      name: product.name,
+      price: product.price,
+      halfCubicUnits: product.halfCubicUnits,
+      image: product.image
+    });
+    setEditingId(product.id);
+    setIsAdding(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelForm = () => {
+    setIsAdding(false);
+    setEditingId(null);
+    setNewProduct({ name: '', price: '', halfCubicUnits: '', image: '' });
   };
 
   return (
@@ -53,21 +93,35 @@ export default function AdminView() {
     >
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-800">Manajemen Produk</h2>
-        <button 
-          onClick={() => setIsAdding(!isAdding)}
-          className="bg-[#c61872] text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-[#8f1164] transition font-bold shadow-md"
-        >
-          <Plus size={20} /> Tambah Produk
-        </button>
+        {!isAdding && (
+          <button 
+            onClick={() => setIsAdding(true)}
+            className="bg-[#c61872] text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-[#8f1164] transition font-bold shadow-md"
+          >
+            <Plus size={20} /> Tambah Produk
+          </button>
+        )}
       </div>
 
       {isAdding && (
         <motion.form 
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-8"
-          onSubmit={handleAdd}
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-8 relative"
+          onSubmit={handleAddOrUpdate}
         >
+          <div className="absolute top-6 right-6">
+            <button type="button" onClick={cancelForm} className="text-gray-400 hover:text-red-500 bg-gray-100 rounded-full p-1 transition">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="space-y-5 col-span-1 md:col-span-2">
+            <h3 className="text-xl font-bold text-gray-800 border-b pb-2">
+              {editingId ? 'Edit Produk' : 'Tambah Produk Baru'}
+            </h3>
+          </div>
+
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Nama Produk</label>
@@ -131,16 +185,16 @@ export default function AdminView() {
             <div className="flex justify-end gap-3 pt-2">
               <button 
                 type="button" 
-                onClick={() => setIsAdding(false)}
+                onClick={cancelForm}
                 className="px-5 py-2.5 rounded-lg text-gray-600 font-medium hover:bg-gray-100 transition"
               >
                 Batal
               </button>
               <button 
                 type="submit" 
-                className="px-5 py-2.5 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800 shadow-md transition"
+                className="px-5 py-2.5 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800 shadow-md transition flex items-center gap-2"
               >
-                Simpan Produk
+                {editingId ? <><Edit2 size={18}/> Simpan Perubahan</> : <><Plus size={18}/> Simpan Produk</>}
               </button>
             </div>
           </div>
@@ -170,12 +224,20 @@ export default function AdminView() {
                   </p>
                 </div>
               </div>
-              <button 
-                onClick={() => handleDelete(product.id)}
-                className="mt-6 flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 hover:border-red-200 px-4 py-2.5 rounded-xl transition w-full border border-gray-200 font-semibold"
-              >
-                <Trash2 size={18} /> Hapus Produk
-              </button>
+              <div className="mt-6 flex gap-3">
+                <button 
+                  onClick={() => startEdit(product)}
+                  className="flex-1 flex items-center justify-center gap-2 text-blue-600 hover:bg-blue-50 hover:border-blue-200 px-3 py-2.5 rounded-xl transition border border-gray-200 font-semibold"
+                >
+                  <Edit2 size={18} /> Edit
+                </button>
+                <button 
+                  onClick={() => handleDelete(product.id)}
+                  className="flex-1 flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 hover:border-red-200 px-3 py-2.5 rounded-xl transition border border-gray-200 font-semibold"
+                >
+                  <Trash2 size={18} /> Hapus
+                </button>
+              </div>
             </div>
           </div>
         ))}
